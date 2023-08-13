@@ -1,74 +1,51 @@
-import {
-  ModifierKeyCode,
-  NumberKeyValue,
-  controlOrSymbolKeyCodes,
-  ifVar,
-  layer,
-  letterKeyCodes,
-  map,
-  modifierKeyCodes,
-  numberKeyCodes,
-  rule,
-  withMapper,
-  writeToProfile
-} from 'karabiner.ts';
+import { ifVar, layer, map, mapDoubleTap, mapSimultaneous, rule, toKey, toSetVar, withCondition, writeToProfile } from 'karabiner.ts';
+import { runMain } from 'module';
 
-
-
-declare const homeRowKeyCodes: readonly ['a', 's', 'd', 'f', 'j', 'k', 'l', 'semicolon'];
-declare type HomeRowKeyCode = (typeof homeRowKeyCodes)[number];
-
-const homeRowMods: Record<HomeRowKeyCode, ModifierKeyCode> = {
-  "a": "left_control",
-  's': 'left_option',
-  'd': 'left_command',
-  'f': 'left_shift',
-  'j': 'right_shift',
-  'k': 'right_command',
-  'l': 'right_option',
-  'semicolon': 'right_control'
-} as const;
-// ! Change '--dry-run' to your Karabiner-Elements Profile name.
-// (--dry-run print the config json into console)
-// + Create a new profile if needed.
 writeToProfile('ts', [
-  // It is not required, but recommended to put symbol alias to layers,
-  // (If you type fast, use simlayer instead, see https://evan-liu.github.io/karabiner.ts/rules/simlayer)
-  // to make it easier to write '←' instead of 'left_arrow'.
-  // Supported alias: https://github.com/evan-liu/karabiner.ts/blob/main/src/utils/key-alias.ts
-  layer('/', 'symbol-mode').manipulators([
-    //     / + [ 1    2    3    4    5 ] =>
-    withMapper(['⌘', '⌥', '⌃', '⇧', '⇪'])((k, i) =>
-      map((i + 1) as NumberKeyValue).toPaste(k),
-    ),
-    withMapper(['←', '→', '↑', '↓', '␣', '⏎', '⇥', '⎋', '⌫', '⌦', '⇪'])((k) =>
-      map(k).toPaste(k),
-    ),
-  ]),
-
-
-  ...Object.entries(homeRowMods).map(([homeRowKey, mod]) =>
-  (layer(homeRowKey as HomeRowKeyCode, `${homeRowKey}-${mod}`).manipulators([
-    withMapper([...letterKeyCodes, ...numberKeyCodes, ...modifierKeyCodes, ...controlOrSymbolKeyCodes])((key) =>
-      (map(key).to(key, mod).condition(ifVar(`${homeRowKey}-${mod}`)))
-    )
-  ]))
-  ),
-
-  //loop through HomeRowKeyCode
-
-
-
-  // layer('a', 'a-mode').manipulators([
-  //   withMapper([...letterKeyCodes, ...numberKeyCodes, ...modifierKeyCodes])((k) =>
-  //     map(k).to(k, 'left⇧')
-  //   )
+  // rule('homerow').manipulators([
+  //   map('a').to('left_control', undefined, { lazy: true }).toIfAlone('a'),
+  //   map('s').to('left_option', undefined, { lazy: true }).toIfAlone('s'),
+  //   map('d').to('left_control', undefined, { lazy: true }).toIfAlone('d'),
+  //   map('f').to('left_shift', undefined, { lazy: true }).toIfAlone('f'),
+  //
+  //   map('j').to('right_shift', undefined, { lazy: true }).toIfAlone('j'),
+  //   map('k').to('right_command', undefined, { lazy: true }).toIfAlone('k'),
+  //   map('l').to('right_option', undefined, { lazy: true }).toIfAlone('l'),
+  //   map(';').to('right_control', undefined, { lazy: true }).toIfAlone(';'),
   // ]),
 
-  rule('Key mapping').manipulators([
-    // config key mappings
-    map('⇪').to('⎋'),
+  rule('modifiers').manipulators([
+    map('caps_lock').to('left_control', undefined, { lazy: true }).toIfAlone('escape'),
+    mapDoubleTap('tab', 'optionalAny').to('caps_lock').delay(300)
+    // .singleTap(toKey('left_shift', undefined, { lazy: true }))
+    ,
+    map('left_command').to('left_command', undefined, { lazy: true }).toIfAlone('tab'),
+    map('spacebar').toIfAlone('spacebar')
+      .toIfHeldDown(toSetVar('NAV', 1)).toAfterKeyUp(toSetVar('NAV', 0)),
+
+    map('right_command').to('right_command', undefined, { lazy: true }).toIfAlone('return_or_enter'),
+    map('right_option').to('right_option', undefined, { lazy: true }).toIfAlone('delete_or_backspace'),
+
+    mapSimultaneous(['v', 'n']).to('hyphen', 'shift'),
+    mapSimultaneous(['r', 'u']).to('hyphen'),
+    mapSimultaneous(['g', 'h']).to('equal_sign'),
   ]),
+
+  rule('nav-mode', ifVar('NAV')).manipulators([
+    map('h').to('left_arrow'),
+    map('j').to('down_arrow'),
+    map('k').to('up_arrow'),
+    map('l').to('right_arrow'),
+
+    map('u').to('open_bracket', 'shift'),
+    map('i').to('close_bracket', 'shift'),
+    map('o').to('9', 'shift'),
+    map('p').to('0', 'shift'),
+
+    map('n').to('open_bracket'),
+    map('m').to('close_bracket'),
+    map('comma').to('comma', 'shift'),
+    map('period').to('period', 'shift'),
+  ]),
+
 ])
-//↓↓←←←↑↑↓↓→→→`⌘⌥⌃⇧⇪⏎␣`:w
-///OOOOWWWMMMWSSSDDD;4;;;LMN94
